@@ -19,7 +19,7 @@ if city:
 
     # Saves weather data every 10 minutes
     if datetime.now() - st.session_state.last_update > timedelta(minutes=10):
-        weather = main.weather_logger()
+        weather = main.weather_logger(city)
         st.session_state.last_update = datetime.now()
         st.success("Weather data saved")
 
@@ -37,18 +37,14 @@ if city:
 
     # Plotting temperature over time
     if os.path.exists(CSV_FILE):
-        df = pd.read_csv(config.CSV_FILE)
+        df = pd.read_csv(CSV_FILE, encoding = "utf-8-sig")
         df.columns = df.columns.str.strip()
 
-        df["timestamp"] = pd.to_datetime(df["timestamp"], errors = "coerce")
-        df["temperature"] = pd.to_numeric(df["temperature"], errors = "coerce")
-        df = df.dropna(subset = ["timestamp", "temperature"])
+        if "timestamp" in df.columns and "temperature" in df.columns:
+            df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce")
+            df["temperature"] = pd.to_numeric(df["temperature"], errors="coerce")
+            df = df.dropna(subset=["timestamp", "temperature"])
 
-        st.write(df.columns)
-        st.write(df.head())
-
-        st.line_chart(
-            df.set_index("timestamp")["temperature"],
-        )
-
+            if not df.empty:
+                st.line_chart(df, x = "timestamp", y = "temperature")
 

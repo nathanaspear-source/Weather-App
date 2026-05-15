@@ -8,6 +8,7 @@ from datetime import datetime
 from config import WEATHER_API_KEY
 
 def get_weather_data(city):
+    """Returns current weather data for a given city"""
     weather_params = {
         "q": city,
         "appid": WEATHER_API_KEY,
@@ -31,9 +32,9 @@ def get_weather_data(city):
 
     }
 
-def weather_logger():
+def weather_logger(city):
     """Storing weather data in CSV file every 10 minutes"""
-    weather = get_weather_data("St. Louis")
+    weather = get_weather_data(city)
     df = pd.DataFrame([weather])
 
     file_exists = os.path.isfile(config.CSV_FILE)
@@ -42,7 +43,10 @@ def weather_logger():
               mode = "a",
               header = not file_exists,
               index = False,
+              lineterminator = "\n",
+              encoding = "utf-8"
               )
     return weather
 
-weather_logger()
+if __name__ == "__main__":
+    weather_logger()
