@@ -1,6 +1,9 @@
+import os
 import requests
 import json
 import config
+import pandas as pd
+from datetime import datetime
 
 from config import WEATHER_API_KEY
 
@@ -15,4 +18,31 @@ def get_weather_data(city):
     weather_response = requests.get(config.BASE_URL, params = weather_params)
     weather_data = weather_response.json()
 
-    return weather_data
+    return {
+        "timestamp": datetime.now(),
+        "weather": weather_data["weather"][0]["main"],
+        "weather description": weather_data["weather"][0]["description"],
+        "temperature": weather_data["main"]["temp"],
+        "humidity": weather_data["main"]["humidity"],
+        "pressure": weather_data["main"]["pressure"],
+        "wind speed": weather_data["wind"]["speed"],
+        "wind direction": weather_data["wind"]["deg"],
+        "clouds": weather_data["clouds"]["all"],
+
+    }
+
+def weather_logger():
+    """Storing weather data in CSV file every 10 minutes"""
+    weather = get_weather_data("St. Louis")
+    df = pd.DataFrame([weather])
+
+    file_exists = os.path.isfile(config.CSV_FILE)
+
+    df.to_csv(config.CSV_FILE,
+              mode = "a",
+              header = not file_exists,
+              index = False,
+              )
+    return weather
+
+weather_logger()
