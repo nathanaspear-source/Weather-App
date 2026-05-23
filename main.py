@@ -4,14 +4,17 @@ import json
 import config
 import pandas as pd
 from datetime import datetime
+from dotenv import load_dotenv
 
-from config import WEATHER_API_KEY
+load_dotenv()
+
+api_key = os.getenv("WEATHER_API_KEY")
 
 def get_weather_data(city):
     """Returns current weather data for a given city"""
     weather_params = {
         "q": city,
-        "appid": WEATHER_API_KEY,
+        "appid": api_key,
         "units": "imperial",
 
     }
@@ -21,6 +24,7 @@ def get_weather_data(city):
 
     return {
         "timestamp": datetime.now(),
+        "city": city.strip().lower(),
         "weather": weather_data["weather"][0]["main"],
         "weather description": weather_data["weather"][0]["description"],
         "temperature": weather_data["main"]["temp"],

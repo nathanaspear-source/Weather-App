@@ -6,19 +6,20 @@ from datetime import datetime, timedelta
 import main
 import os
 import pandas as pd
-
+from streamlit_autorefresh import st_autorefresh
 
 st.title("Weather App")
 
 city = st.text_input("Enter a City:")
 
 if city:
+    st_autorefresh(interval = 60000, key="weather_refresh")
     # Stores last weather update in Streamlit session state
     if "last_update" not in st.session_state:
         st.session_state.last_update = datetime.min
 
-    # Saves weather data every 10 minutes
-    if datetime.now() - st.session_state.last_update > timedelta(minutes=10):
+    # Saves weather data every minute
+    if datetime.now() - st.session_state.last_update > timedelta(minutes=1):
         weather = main.weather_logger(city)
         st.session_state.last_update = datetime.now()
         st.success("Weather data saved")
@@ -40,11 +41,11 @@ if city:
         df = pd.read_csv(CSV_FILE, encoding = "utf-8-sig")
         df.columns = df.columns.str.strip()
 
-        if "timestamp" in df.columns and "temperature" in df.columns:
-            df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce")
-            df["temperature"] = pd.to_numeric(df["temperature"], errors="coerce")
-            df = df.dropna(subset=["timestamp", "temperature"])
+        # Sorts each city column's data in DataFrame by the time when it was retrieved
+        df = df[df["city"] == city.strip().lower()].sort_values("timestamp")
 
-            if not df.empty:
-                st.line_chart(df, x = "timestamp", y = "temperature")
+        if not df.empty:
+            st.line_chart(df, x = "timestamp", y = "temperature")
+        else:
+            st.info("No weather data available yet for this city.")
 
