@@ -36,6 +36,13 @@ if city:
     col3.metric(label = "Wind Speed", value = f"{weather['wind speed']} mph")
     col4.metric(label = "Wind Direction", value = f"{weather['wind direction']}°")
 
+    # Select box provided so that users can select what stored weather metric
+    # they would like to view a plot for
+    plot_option = st.selectbox("Plot Options",
+                                ("Temperature", "Humidity", "Pressure", "Wind Speed"))
+
+    st.write("You Selected", plot_option)
+
     # Plotting temperature over time
     if os.path.exists(CSV_FILE):
         df = pd.read_csv(CSV_FILE, encoding = "utf-8-sig")
