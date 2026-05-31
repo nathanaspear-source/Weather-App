@@ -37,7 +37,7 @@ if city:
     col4.metric(label = "Wind Direction", value = f"{weather['wind direction']}°")
 
     # Select box provided so that users can select what stored weather metric
-    # they would like to view a plot for
+    # they would like to view as a plot
     plot_option = st.selectbox("Plot Options",
                                 ("Temperature", "Humidity", "Pressure", "Wind Speed"))
 
@@ -51,8 +51,23 @@ if city:
         # Sorts each city column's data in DataFrame by the time when it was retrieved
         df = df[df["city"] == city.strip().lower()].sort_values("timestamp")
 
-        if not df.empty:
-            st.line_chart(df, x = "timestamp", y = "temperature")
-        else:
+        # Used to display plot with information corresponding to what the user selected
+        if df.empty:
             st.info("No weather data available yet for this city.")
+        if not df.empty and plot_option == "Temperature":
+            st.line_chart(df, x = "timestamp", y = "temperature")
+        if not df.empty and plot_option == "Humidity":
+            st.line_chart(df, x = "timestamp", y = "humidity")
+        if not df.empty and plot_option == "Pressure":
+            st.line_chart(df, x = "timestamp", y = "pressure")
+        if not df.empty and plot_option == "Wind Speed":
+            st.line_chart(df, x = "timestamp", y = "wind speed")
 
+    # Displays rain forecast (rain or no rain) for next five days
+    st.subheader(f"Five Day Rain Forecast")
+    col5, col6, col7, col8, col9 = st.columns(5)
+    col5.metric(label="Day 1", value="Rain")
+    col6.metric(label="Day 2", value="Rain")
+    col7.metric(label="Day 3", value="No Rain")
+    col8.metric(label="Day 4", value="Rain")
+    col9.metric(label="Day 5", value="No Rain")
