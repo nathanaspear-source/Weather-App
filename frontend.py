@@ -7,6 +7,10 @@ import main
 import os
 import pandas as pd
 from streamlit_autorefresh import st_autorefresh
+import joblib
+
+def load_rain_model():
+    return joblib.load("ML/random_forest_model.joblib")
 
 st.title("Weather App")
 
@@ -63,11 +67,25 @@ if city:
         if not df.empty and plot_option == "Wind Speed":
             st.line_chart(df, x = "timestamp", y = "wind speed")
 
+    # Loads model and predicts whether there will be rain based
+    # on weather forecast
+    rain_model = load_rain_model()
+    forecast_df = main.get_weather_forecast(city)
+    predictions = rain_model.predict(forecast_df)
+
+    day_count = min(5, len(predictions))
+    cols = st.columns(day_count)
+
+    for i, col in enumerate(cols):
+        forecast_date = forecast_df.index[i]
+        rain_label = "Rain" if predictions[i] == "Yes" else "No Rain"
+        col.metric(label=forecast_date.strptime("%a %b %-d"), value=rain_label)
+
     # Displays rain forecast (rain or no rain) for next five days
     st.subheader(f"Five Day Rain Forecast")
     col5, col6, col7, col8, col9 = st.columns(5)
-    col5.metric(label="Day 1", value="Rain")
-    col6.metric(label="Day 2", value="Rain")
-    col7.metric(label="Day 3", value="No Rain")
-    col8.metric(label="Day 4", value="Rain")
-    col9.metric(label="Day 5", value="No Rain")
+    col5.metric(label="Day 1", value=predictions[0])
+    col6.metric(label="Day 2", value=predictions[1])
+    col7.metric(label="Day 3", value=predictions[2])
+    col8.metric(label="Day 4", value=predictions[3])
+    col9.metric(label="Day 5", value=predictions[4])
