@@ -78,5 +78,12 @@ def weather_logger(city):
               )
     return weather
 
-if __name__ == "__main__":
-    weather_logger()
+def safe_weather_logger(city):
+    """Logs weather data and isolates errors so long-running background data logging
+    doesn't stop"""
+
+    try:
+        weather_logger(city)
+        return True, None
+    except Exception as e:
+        return False, f"{type(e).__name__}: {e}"

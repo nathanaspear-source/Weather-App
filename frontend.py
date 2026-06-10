@@ -2,12 +2,13 @@ import streamlit as st
 import config
 from config import CSV_FILE
 from main import get_weather_data
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 import main
 import os
 import pandas as pd
 from streamlit_autorefresh import st_autorefresh
 import joblib
+from ML.feature_mapper import degrees_to_compass
 
 def load_rain_model():
     return joblib.load("ML/random_forest_model.joblib")
@@ -35,10 +36,10 @@ if city:
     st.subheader(f"Today's Weather Will Have {weather['weather']}")
 
     col1, col2, col3, col4 = st.columns(4)
-    col1.metric(label = "Temperature", value = f"{weather['temperature']}°F")
+    col1.metric(label = "Temperature", value = f"{weather['temperature']:.0f}°F")
     col2.metric(label = "Humidity", value = f"{weather['humidity']}%")
-    col3.metric(label = "Wind Speed", value = f"{weather['wind speed']} mph")
-    col4.metric(label = "Wind Direction", value = f"{weather['wind direction']}°")
+    col3.metric(label = "Wind Speed", value = f"{round(weather['wind speed'], 0):.0f} mph")
+    col4.metric(label = "Wind Direction", value = f"{weather['wind direction']}° {degrees_to_compass(weather['wind direction'])}")
 
     # Select box provided so that users can select what stored weather metric
     # they would like to view as a plot
@@ -49,11 +50,17 @@ if city:
 
     # Plotting temperature over time
     if os.path.exists(CSV_FILE):
+        # Gets today's date so data displayed in plots only shows today's data
+        today = date.today()
+
         df = pd.read_csv(CSV_FILE, encoding = "utf-8-sig")
         df.columns = df.columns.str.strip()
 
+        # Converts datetime strings to datetime objects in timestamp df column
+        df["timestamp"] = pd.to_datetime(df["timestamp"])
+
         # Sorts each city column's data in DataFrame by the time when it was retrieved
-        df = df[df["city"] == city.strip().lower()].sort_values("timestamp")
+        df = df[(df["city"] == city.strip().lower()) & (df["timestamp"].dt.date == today)].sort_values("timestamp")
 
         # Used to display plot with information corresponding to what the user selected
         if df.empty:
@@ -72,20 +79,30 @@ if city:
     rain_model = load_rain_model()
     forecast_df = main.get_weather_forecast(city)
     predictions = rain_model.predict(forecast_df)
+    rain_probabilities = rain_model.predict_proba(forecast_df)
+    rain_chance = rain_probabilities[:, 1] * 100
 
+    # Calculates number of columns for rain forecast to display
+    # based on number of days in forecast
     day_count = min(5, len(predictions))
     cols = st.columns(day_count)
 
+    # Displays rain forecast (rain or no rain) for next five days
     for i, col in enumerate(cols):
         forecast_date = forecast_df.index[i]
         rain_label = "Rain" if predictions[i] == "Yes" else "No Rain"
-        col.metric(label=forecast_date.strptime("%a %b %-d"), value=rain_label)
+        col.metric(label=forecast_date.strftime("%a %b %-d"), value=rain_label)
 
-    # Displays rain forecast (rain or no rain) for next five days
-    st.subheader(f"Five Day Rain Forecast")
-    col5, col6, col7, col8, col9 = st.columns(5)
-    col5.metric(label="Day 1", value=predictions[0])
-    col6.metric(label="Day 2", value=predictions[1])
-    col7.metric(label="Day 3", value=predictions[2])
-    col8.metric(label="Day 4", value=predictions[3])
-    col9.metric(label="Day 5", value=predictions[4])
+    day_count = min(5, len(predictions))
+
+    st.header("5-Day Rain Forecast")
+    for day in range(day_count):
+        forecast_date = forecast_df.index[day]
+        rain_label = "Rain" if predictions[day] == "Yes" else "No Rain"
+        rain_pct = rain_chance[day]
+        with st.container(border = True):
+            left, middle, right = st.columns([2, 1, 1])
+
+            left.subheader(f"{forecast_date.strftime("%a %b %-d")}")
+            middle.subheader(f"{rain_label}")
+            right.subheader(f"{rain_pct:.0f}% Chance of Rain")
