@@ -21,3 +21,5 @@ timestamp,city,weather,weather description,temperature,humidity,pressure,wind sp
 2026-06-10 13:31:00.137228,detroit,Clouds,few clouds,87.93,84,1008,1.99,274,16
 2026-06-10 13:31:41.538449,st. louis,Clouds,scattered clouds,92.41,60,1009,3,289,33
 2026-06-10 13:31:44.541187,st. louis,Clouds,scattered clouds,92.41,60,1009,3,289,33
+2026-06-10 13:33:41.552190,st. louis,Clouds,scattered clouds,92.41,60,1009,3,289,33
+2026-06-10 13:33:44.527927,st. louis,Clouds,scattered clouds,92.41,60,1009,3,289,33
