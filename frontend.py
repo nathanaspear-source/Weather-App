@@ -91,7 +91,7 @@ if city:
     for i, col in enumerate(cols):
         forecast_date = forecast_df.index[i]
         rain_label = "Rain" if predictions[i] == "Yes" else "No Rain"
-        col.metric(label=forecast_date.strftime("%a %b %-d"), value=rain_label)
+        col.metric(label=f"{forecast_date:%a %b} {forecast_date.day}", value=rain_label)
 
     day_count = min(5, len(predictions))
 
@@ -103,6 +103,6 @@ if city:
         with st.container(border = True):
             left, middle, right = st.columns([2, 1, 1])
 
-            left.subheader(f"{forecast_date.strftime("%a %b %-d")}")
+            left.subheader(f"{forecast_date:%a %b} {forecast_date.day}")
             middle.subheader(f"{rain_label}")
             right.subheader(f"{rain_pct:.0f}% Chance of Rain")
