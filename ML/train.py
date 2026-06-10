@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import GridSearchCV
 from sklearn.pipeline import Pipeline
@@ -24,7 +26,8 @@ rf_grid_search.fit(X_train, y_train)
 
 # Storing best performing model for future use
 rf_model = rf_grid_search.best_estimator_
-joblib.dump(rf_model, "random_forest_model.joblib")
+model_path = Path(__file__).resolve().parent / "random_forest_model.joblib"
+joblib.dump(rf_model, model_path)
 
 print(f"Best Parameters: {rf_grid_search.best_params_}")
 print(f"Best CV score: {rf_grid_search.best_score_:.4f}")
