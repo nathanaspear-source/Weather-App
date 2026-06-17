@@ -1,6 +1,5 @@
 import os
 import requests
-import json
 import config
 import pandas as pd
 from datetime import datetime
