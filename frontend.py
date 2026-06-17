@@ -9,13 +9,12 @@ import pandas as pd
 from streamlit_autorefresh import st_autorefresh
 import joblib
 from ML.feature_mapper import degrees_to_compass
-
-def load_rain_model():
-    return joblib.load("ML/random_forest_model.joblib")
+import pydeck
+from ML.model import load_rain_model
 
 st.title("Weather App")
 
-city = st.text_input("Enter a City:")
+city = st.text_input("Enter a City:", key="button_1")
 
 if city:
     st_autorefresh(interval = 60000, key="weather_refresh")
@@ -91,7 +90,7 @@ if city:
     for i, col in enumerate(cols):
         forecast_date = forecast_df.index[i]
         rain_label = "Rain" if predictions[i] == "Yes" else "No Rain"
-        col.metric(label=f"{forecast_date:%a %b} {forecast_date.day}", value=rain_label)
+        col.metric(label=forecast_date.strftime("%a %b %-d"), value=rain_label)
 
     day_count = min(5, len(predictions))
 
@@ -103,6 +102,78 @@ if city:
         with st.container(border = True):
             left, middle, right = st.columns([2, 1, 1])
 
-            left.subheader(f"{forecast_date:%a %b} {forecast_date.day}")
+            left.subheader(f"{forecast_date.strftime("%a %b %-d")}")
             middle.subheader(f"{rain_label}")
             right.subheader(f"{rain_pct:.0f}% Chance of Rain")
+
+# Streamlit Pydeck map showing most recent temperature for all cities
+# Gets most recent weather data for each city
+city_wd = pd.read_csv("weather.csv")
+latest_weather = (
+    city_wd.sort_values("timestamp").groupby("city").tail(1)
+)
+
+world_cities = pd.read_csv("worldcities.csv")
+world_cities = world_cities[["city_ascii", "lat", "lng"]]
+world_cities["city_ascii"] = world_cities["city_ascii"].str.lower()
+world_cities = world_cities.drop_duplicates(subset="city_ascii", keep="first")
+world_cities.to_csv("world_cities.csv", index=False)
+
+merged_weather_data = latest_weather.merge(
+    world_cities,
+    left_on="city",
+    right_on="city_ascii",
+    how="left",
+)
+
+tooltip = {
+    "html": """
+    <b>{city}</b><br/>
+    Temperature: {temperature}°F
+    """,
+    "style": {
+        "backgroundColor": "steelblue",
+        "color": "white"
+    }
+}
+
+# Configures where city points go on world map
+layer = pydeck.Layer(
+    "ScatterplotLayer",
+    data=merged_weather_data,
+    get_position=["lng", "lat"],
+    get_radius=100000,
+    get_fill_color=[255, 100, 100],
+    pickable=True,
+)
+
+# Sets default view state position for pydeck chart
+view_state = pydeck.ViewState(
+    latitude=20,
+    longitude=0,
+    zoom=1,
+    pitch=0,
+)
+
+# Configures text layer of pydeck chart used when user
+# hovers cursor over city point
+text_layer = pydeck.Layer(
+    "TextLayer",
+    data=merged_weather_data,
+    get_position=["lng", "lat"],
+    get_text="temperature",
+    get_size=18,
+    get_color="[255, 75, 75]",
+    pickable=True,
+    get_alignment_baseline="'bottom'",
+)
+
+# Final configuration of pydeck chart
+deck = pydeck.Deck(
+    layers = [layer, text_layer],
+    initial_view_state=view_state,
+    tooltip=tooltip,
+)
+
+# Displays pydeck chart
+st.pydeck_chart(deck)

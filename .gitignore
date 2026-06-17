@@ -1,3 +1,4 @@
+.env
 *.env
 *.joblib
 ML/random_forest_model.joblib
